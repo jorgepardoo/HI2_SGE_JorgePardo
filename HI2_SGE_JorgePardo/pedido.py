@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import PhotoImage
 from tkinter import (Scrollbar,messagebox,ttk)
 import sqlite3
 
@@ -129,11 +128,18 @@ def pedido():
     IdCliente.place(x=10,y=115)
     IdCliente_entrada.place(x=13,y=135)
 
+    def ordenar_columna(tree, col, reverse):
+        data = [ (tree.set(child, col), child) for child in tree.get_children('')]
+        data.sort(reverse=reverse)
+        for i, item in enumerate(data):
+            tree.move(item[1], '', i)
+        tree.heading(col, command=lambda: ordenar_columna(tree, col, not reverse))
+
     lista_registros = ttk.Treeview(ventanaPedidos, columns=("IdPedido", "FechaPedido", "IdCliente"),show="headings", selectmode="browse")
     
-    lista_registros.heading("IdPedido", text="IdPedido")
-    lista_registros.heading("FechaPedido", text="FechaPedido")
-    lista_registros.heading("IdCliente", text="IdCliente")
+    lista_registros.heading("IdPedido", text="IdPedido",command=lambda: ordenar_columna(lista_registros,"IdPedido",False))
+    lista_registros.heading("FechaPedido", text="FechaPedido",command=lambda: ordenar_columna(lista_registros,"FechaPedido",False))
+    lista_registros.heading("IdCliente", text="IdCliente",command=lambda: ordenar_columna(lista_registros,"IdCliente",False))
 
     lista_registros.column("IdPedido", width=100)
     lista_registros.column("FechaPedido", width=100)

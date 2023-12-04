@@ -1,11 +1,9 @@
 import tkinter as tk
-from tkinter import PhotoImage
 from tkinter import (Scrollbar,messagebox,ttk)
 import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
 
 def producto():
     #Nos conectamos a la base de datos
@@ -46,11 +44,9 @@ def producto():
         categoria = IdCategoria_entrada.get()
         precio = precio_entrada.get()
         stock = stock_entrada.get()
-
         #Nos conectamos a la base de datos
         with sqlite3.connect("supermercado.db") as conn:
             cursor = conn.cursor()
-
         #Realizamos el insert
         cursor.execute(
             "INSERT INTO productos (IdProducto,NombreProducto, IdCategoria, Precio, Stock) VALUES (?, ?, ?, ?, ?)",
@@ -61,37 +57,29 @@ def producto():
         #Mostramos un mensaje de exitoso
         messagebox.showinfo("Éxito", "Producto creado exitosamente.")
 
-
+    #Funcion delete
     def eliminar_registro():
         seleccion = lista_registros.selection() #trae el elemento que tenemos clicado en la lista_registri
         if seleccion:
-            '''
-            siempre que tengamos un elemento seleccionado,obtenemos el valor de la primera columna del elemento seleccionado de la lista. 
-            Este valor es el ID del registro que se va a eliminar.
-                    '''
-
             id_seleccionado = lista_registros.item(seleccion, "values")[0]
             cursor = conn.cursor() # Nos conectamos a la base de datos
-
             cursor.execute("DELETE FROM productos WHERE IdProducto = ?", (id_seleccionado,))
             conn.commit()
             mostrar_registros()
             messagebox.showinfo("👍", "Producto eliminado exitosamente.")
 
+    #Funcion Update
     def editar_registro():
         seleccion = lista_registros.selection()
         if seleccion:
             id_seleccionado = lista_registros.item(seleccion, "values")[0]
-
             # Obtener los nuevos valores desde las cajas de entrada            
             nombre = nombre_entrada.get()
             categoria = IdCategoria_entrada.get()
             precio = precio_entrada.get()
             stock = stock_entrada.get()
-
             with sqlite3.connect("supermercado.db") as conn:
                 cursor = conn.cursor()
-
                 try:
                     cursor.execute("UPDATE productos SET NombreProducto = ?, IdCategoria = ?, Precio = ?, Stock = ? WHERE IdProducto = ?",
                                 (nombre, categoria, precio, stock,id_seleccionado))
@@ -101,96 +89,75 @@ def producto():
                 except sqlite3.Error as e:
                     messagebox.showerror("❌", f"No se pudo editar el producto: {e}")
 
-
+    #Mostrar grafico
     def mostrar_grafico():
-        # Leer los datos de la base de datos
-        registros = leer_registros()
+            conn = sqlite3.connect("supermercado.db")
+            # Creamos un dataframe con los datos de cada categoria
+            sql = pd.read_sql_query('''SELECT categoria.NombreCategoria FROM productos INNER JOIN categoria ON productos.IdCategoria = categoria.IdCategoria''', conn)
+            df = pd.DataFrame(sql, columns=['NombreCategoria'])
 
-        # Crear un DataFrame de pandas
-        df = pd.DataFrame(registros, columns=["IdProducto", "NombreProducto", "IdCategoria", "Precio", "Stock"])
+            # Calculamos la frecuencia de cada categoria
+            frecuencia_categoria = df['NombreCategoria'].value_counts()
 
-        # Asegurarse de que la columna "Stock" sea numérica
-        df["Stock"] = pd.to_numeric(df["Stock"], errors="coerce")
+            fig, ax = plt.subplots()
+            ax.pie(frecuencia_categoria, labels=frecuencia_categoria.index, autopct='%1.1f%%', startangle=90)
+            ax.axis('equal')
+            ax.set_title('Categorias de Productos')
 
-        # Crear intervalos
-        intervalos = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-        # Calcular el recuento de productos en cada intervalo
-        counts = df["Stock"].value_counts(sort=False)
+            grafico_canvas = FigureCanvasTkAgg(fig, master=ventanaProductos)
+            grafico_canvas.draw()
+            grafico_canvas.get_tk_widget().place(x=10, y=280)
 
-        df["Intervalo"] = pd.cut(intervalos, counts, include_lowest=True)
-
-        
-
-        # Crear un gráfico de barras con los intervalos
-        plt.figure(figsize=(8, 6))
-        plt.bar(counts.index, counts, width=0.8, color="blue")
-        plt.xlabel("Intervalo de Stock")
-        plt.ylabel("Cantidad de Productos")
-        plt.title("Distribución de Stock de Productos")
-
-        # Integrar el gráfico en la interfaz de tkinter
-        canvas = FigureCanvasTkAgg(plt.gcf(), master=ventanaProductos)
-        canvas.draw()
-        canvas.get_tk_widget().place(x=10, y=280)  # Ajusta las coordenadas según sea necesario
-
-    
     ventanaProductos = tk.Tk()
     ventanaProductos.title('Ventana Productos')
-
     ventanaProductos.geometry("700x300")
-    #ventanaProductos.resizable(False,False)
 
+    #Creamos los campos que se encuentran en el diseño 
     IdProducto=tk.Label(ventanaProductos,text='ID Producto')
+    IdProducto.place(x=10,y=35)
     IdProducto_entrada = tk.Entry(ventanaProductos)
-
+    IdProducto_entrada.place(x=13,y=55)
     nombre=tk.Label(ventanaProductos,text='Nombre')
+    nombre.place(x=10,y=75)
     nombre_entrada = tk.Entry(ventanaProductos)
-
+    nombre_entrada.place(x=13,y=95)
     IdCategoria=tk.Label(ventanaProductos,text='ID Categoria')
+    IdCategoria.place(x=10,y=115)
     IdCategoria_entrada = tk.Entry(ventanaProductos)
-
+    IdCategoria_entrada.place(x=13,y=135)
     precio=tk.Label(ventanaProductos, text='Precio')
+    precio.place(x=10,y=155)
     precio_entrada = tk.Entry(ventanaProductos)
-
+    precio_entrada.place(x=13,y=175)
     stock=tk.Label(ventanaProductos, text='Stock')
-    stock_entrada = tk.Entry(ventanaProductos)    
-
-
+    stock.place(x=10,y=195)
+    stock_entrada = tk.Entry(ventanaProductos)
+    stock_entrada.place(x=13,y=215)
+    #Creamos los botones de las acciones de la base de datos
     botonInsert = tk.Button(ventanaProductos,command=crear_registro,text="Insertar")
     botonInsert.place(x=10,y=250)
     botonUpdate = tk.Button(ventanaProductos,command=editar_registro,text="Actualizar")
     botonUpdate.place(x=70,y=250)
     botonDelete = tk.Button(ventanaProductos,command=eliminar_registro,text="Eliminar")
-    botonDelete.place(x=140,y=250)
+    botonDelete.place(x=140,y=250)    
     botonGrafico = tk.Button(ventanaProductos,command=mostrar_grafico,text="Mostrar Grafico")
     botonGrafico.place(x=210,y=250)
-
-    botonSalir = tk.Button(ventanaProductos,command=salir,text="<", width=2, height=1)#Atras
+    botonSalir = tk.Button(ventanaProductos,command=salir,text="<", width=2, height=1)
     botonSalir.place(x=10,y=10)
-    
-    # Colocar las entradas en la ventana
-    IdProducto.place(x=10,y=35)
-    IdProducto_entrada.place(x=13,y=55)
-
-    nombre.place(x=10,y=75)
-    nombre_entrada.place(x=13,y=95)
-
-    IdCategoria.place(x=10,y=115)
-    IdCategoria_entrada.place(x=13,y=135)
-
-    precio.place(x=10,y=155)
-    precio_entrada.place(x=13,y=175)
-
-    stock.place(x=10,y=195)
-    stock_entrada.place(x=13,y=215)   
+    def ordenar_columna(tree, col, reverse):
+        data = [ (tree.set(child, col), child) for child in tree.get_children('')]
+        data.sort(reverse=reverse)
+        for i, item in enumerate(data):
+            tree.move(item[1], '', i)
+        tree.heading(col, command=lambda: ordenar_columna(tree, col, not reverse))
 
     lista_registros = ttk.Treeview(ventanaProductos, columns=("IdProducto", "Nombre", "IdCategoria", "Precio", "Stock"),show="headings", selectmode="browse")
     
-    lista_registros.heading("IdProducto", text="IdProducto")
-    lista_registros.heading("Nombre", text="Nombre")
-    lista_registros.heading("IdCategoria", text="IdCategoria")
-    lista_registros.heading("Precio", text="Precio")
-    lista_registros.heading("Stock", text="Stock")
+    lista_registros.heading("IdProducto", text="IdProducto",command=lambda: ordenar_columna(lista_registros,"IdProducto",False))
+    lista_registros.heading("Nombre", text="Nombre",command=lambda: ordenar_columna(lista_registros,"Nombre",False))
+    lista_registros.heading("IdCategoria", text="IdCategoria",command=lambda: ordenar_columna(lista_registros,"IdCategoria",False))
+    lista_registros.heading("Precio", text="Precio",command=lambda: ordenar_columna(lista_registros,"Precio",False))
+    lista_registros.heading("Stock", text="Stock",command=lambda: ordenar_columna(lista_registros,"Stock",False))
 
     lista_registros.column("IdProducto", width=100)
     lista_registros.column("Nombre", width=100)
@@ -198,17 +165,13 @@ def producto():
     lista_registros.column("Precio", width=100)
     lista_registros.column("Stock", width=100)
     style = ttk.Style()
-    style.configure("Treeview",
-                background="gray",  # Color de fondo
-                foreground="blue",  # Color del texto
-                rowheight=25,)  # Altura de la fila
+    style.configure("Treeview", background="gray", foreground="blue", rowheight=25,)
 
     style.map("Treeview", background=[('selected', '#cc007b')])
     lista_registros.place(x=170,y=10)
     scrollbar = Scrollbar(ventanaProductos, orient="vertical", command=lista_registros.yview)
     scrollbar.place(x=672,y=10,height=225)
     lista_registros.configure(yscrollcommand=scrollbar.set)
-
 
     mostrar_registros()
     ventanaProductos.mainloop()

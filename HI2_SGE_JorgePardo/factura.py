@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import PhotoImage
 from tkinter import (Scrollbar,messagebox,ttk)
 import sqlite3
 
@@ -148,13 +147,20 @@ def factura():
     cantidad.place(x=10,y=195)
     cantidad_entrada.place(x=13,y=215)   
 
+    def ordenar_columna(tree, col, reverse):
+        data = [ (tree.set(child, col), child) for child in tree.get_children('')]
+        data.sort(reverse=reverse)
+        for i, item in enumerate(data):
+            tree.move(item[1], '', i)
+        tree.heading(col, command=lambda: ordenar_columna(tree, col, not reverse))
+
     lista_registros = ttk.Treeview(ventanaFactura, columns=("IdFactura", "IdPedido", "IdProducto", "Precio", "Cantidad"),show="headings", selectmode="browse")
     
-    lista_registros.heading("IdFactura", text="IdFactura")
-    lista_registros.heading("IdPedido", text="IdPedido")
-    lista_registros.heading("IdProducto", text="IdProducto")
-    lista_registros.heading("Precio", text="Precio")
-    lista_registros.heading("Cantidad", text="Cantidad")
+    lista_registros.heading("IdFactura", text="IdFactura",command=lambda: ordenar_columna(lista_registros,"IdFactura",False))
+    lista_registros.heading("IdPedido", text="IdPedido",command=lambda: ordenar_columna(lista_registros,"IdPedido",False))
+    lista_registros.heading("IdProducto", text="IdProducto",command=lambda: ordenar_columna(lista_registros,"IdProducto",False))
+    lista_registros.heading("Precio", text="Precio",command=lambda: ordenar_columna(lista_registros,"Precio",False))
+    lista_registros.heading("Cantidad", text="Cantidad",command=lambda: ordenar_columna(lista_registros,"Cantidad",False))
 
     lista_registros.column("IdFactura", width=100)
     lista_registros.column("IdPedido", width=100)

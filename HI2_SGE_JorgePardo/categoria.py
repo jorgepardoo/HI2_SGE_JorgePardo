@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import PhotoImage
 from tkinter import (Scrollbar,messagebox,ttk)
 import sqlite3
 
@@ -13,6 +12,7 @@ def categoria():
     cursor.execute('''CREATE TABLE IF NOT EXISTS categoria
                   (IdCategoria INTEGER PRIMARY KEY AUTOINCREMENT,
                    NombreCategoria TEXT)''')
+    
     
     #Funcion del boton de salir para salir de la ventana
     def salir():
@@ -120,10 +120,17 @@ def categoria():
     nombre.place(x=10,y=75)
     nombre_entrada.place(x=13,y=95)
 
+    def ordenar_columna(tree, col, reverse):
+        data = [ (tree.set(child, col), child) for child in tree.get_children('')]
+        data.sort(reverse=reverse)
+        for i, item in enumerate(data):
+            tree.move(item[1], '', i)
+        tree.heading(col, command=lambda: ordenar_columna(tree, col, not reverse))
+
     lista_registros = ttk.Treeview(ventanaCategoria, columns=("IdCategoria", "NombreCategoria"),show="headings", selectmode="browse")
     
-    lista_registros.heading("IdCategoria", text="IdCategoria")
-    lista_registros.heading("NombreCategoria", text="NombreCategoria")
+    lista_registros.heading("IdCategoria", text="IdCategoria",command=lambda: ordenar_columna(lista_registros,"IdCategoria",False))
+    lista_registros.heading("NombreCategoria", text="NombreCategoria",command=lambda: ordenar_columna(lista_registros,"NombreCategoria",False))
 
     lista_registros.column("IdCategoria", width=125)
     lista_registros.column("NombreCategoria", width=125)
